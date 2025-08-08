@@ -6,6 +6,9 @@ const config = {
     "db_password": process.env.db_password,
     "db_name": process.env.db_name,
     "db_port": parseInt(process.env.db_port),
+
+    "sql_encKey": process.env.SQL_KEY,
+    
     "corsOptions": process.env.corsOptions,
 };
 

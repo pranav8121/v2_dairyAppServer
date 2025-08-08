@@ -6,7 +6,7 @@ module.exports = (controllerFn) => {
     return (req, res, next) => {
         (async () => {
             const responses = messageResponses;
-            const { key, data } = await controllerFn(input);
+            const { key, data } = await controllerFn(req);
             handleSuccessResponse(res, responses, key, data);
         })().catch((err) => {
             const responses = messageResponses;
@@ -30,6 +30,7 @@ function handleSuccessResponse(res, responses, key, data) {
 
 function handleErrorResponse(res, responses, err) {
     const isAPIError = err instanceof APIError;
+    console.log(`Error: ${err.message}`, err.stack);
     const errorKey = isAPIError ? err.key : 'INTERNAL_ERROR';
     const { message, status_code } = responses[errorKey] || responses.INTERNAL_ERROR;
 
