@@ -1,9 +1,8 @@
 'use strict';
 let router = require('express').Router();
-let LoginController = require('../controller/login.controller');
-let loginController = new LoginController();
+let loginService = new (require("../service/member.service"))();
+const responseHandler= require('../../../../../response-handler/response-handler');
 
-// Login route - the path is '/' because admin/index.js already routes to '/login'
-router.post('/', loginController.login.bind(loginController));
+router.post('/authenticate', responseHandler(loginService.authenticate));
 
 module.exports = router;
