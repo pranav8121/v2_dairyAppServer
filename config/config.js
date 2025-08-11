@@ -8,8 +8,14 @@ const config = {
     "db_port": parseInt(process.env.db_port),
 
     "sql_encKey": process.env.SQL_KEY,
-    
+
     "corsOptions": process.env.corsOptions,
+
+    "jwt_key": process.env.JWT_SECRET,
+    "jwt_expires_in": process.env.JWT_EXPIRES_IN,
+
+    "redis_host": process.env.REDIS_HOST || 'localhost',
+    "redis_port": process.env.REDIS_PORT || 6379
 };
 
 module.exports = config;
