@@ -6,9 +6,17 @@ const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const jwt = require("jsonwebtoken");
 const config = require("./config/config");
+let knex = require("./config/db");
+const redisClient = require("./config/redis");
 let indexRouter = require("./src/index");
 const authMiddleware = require("./src/middlewares/authMiddleware");
 const loginRoute = require("./src/admin/modules/login/routes/login.route");
+
+let corsOptions = {
+  origin: JSON.parse(config.corsOptions),
+  optionsSuccessStatus: 200,
+  credentials: true,
+};
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,15 +28,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
-app.use(authMiddleware); 
+app.use(authMiddleware);
 app.use("/", loginRoute);
-
-// CORS setup
-const corsOptions = {
-  origin: JSON.parse(config.corsOptions) || "http://localhost:3000",
-  optionsSuccessStatus: 200,
-  credentials: true,
-};
 app.use(cors(corsOptions));
 
 // Session setup
@@ -52,6 +53,10 @@ app.get("/api/health", (req, res) => {
     status: "OK",
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
+    redis: {
+      connected: redisClient.isConnected,
+      status: redisClient.isConnected ? "Connected" : "Disconnected",
+    },
   });
 });
 
@@ -86,7 +91,6 @@ app.post("/api/admin/login/authenticate", (req, res) => {
   });
 });
 
-
 app.get("/api/admin/protected", (req, res) => {
   if (!req.session.token) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -104,12 +108,12 @@ app.get("/api/admin/protected", (req, res) => {
       .json({ success: false, message: "Invalid or expired token" });
   }
 });
+
 app.get("/dashboard", (req, res) => {
   res.json({
     message: `Hello ${req.user.username}, welcome to the dashboard.`,
   });
 });
-
 
 app.use("/api/", indexRouter);
 
@@ -120,7 +124,6 @@ app.use("*", (req, res) => {
   });
 });
 
-
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
@@ -129,12 +132,44 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
+
+  // Initialize Redis connection
+  try {
+    await redisClient.connect();
+    console.log("✅ Redis connected successfully");
+  } catch (error) {
+    console.error("❌ Failed to connect to Redis:", error.message);
+  }
+
   console.log(`📚 API Documentation:`);
   console.log(`   GET  http://localhost:${PORT}/`);
   console.log(`   GET  http://localhost:${PORT}/api/health`);
   console.log(`   POST http://localhost:${PORT}/api/admin/login/authenticate`);
+});
+
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  console.log("\n🛑 Shutting down server...");
+  try {
+    await redisClient.disconnect();
+    console.log("✅ Redis disconnected");
+  } catch (error) {
+    console.error("❌ Error disconnecting Redis:", error.message);
+  }
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  console.log("\n🛑 Shutting down server...");
+  try {
+    await redisClient.disconnect();
+    console.log("✅ Redis disconnected");
+  } catch (error) {
+    console.error("❌ Error disconnecting Redis:", error.message);
+  }
+  process.exit(0);
 });
 
 module.exports = app;
