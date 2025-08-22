@@ -3,19 +3,26 @@ let config = require('../config/config');
 const secret = config.jwt_key;
 const expiresIn = config.jwt_expires_in;
 
-generateToken = (user) => {
-    const payload = {
-        id: user.id,
-        username: user.username,
-        role: user.role
-    };
-
-    return jwt.sign(payload, secret, { expiresIn: expiresIn, algorithm: 'RS256' });
+exports.generateToken = (token_data) => {
+    token_data['iat'] = Math.floor(Date.now() / 1000);
+    return new Promise((resolve, reject) => {
+        jwt.sign(token_data, secret, {
+            expiresIn: expiresIn,
+            algorithm: 'HS256',
+            issuer: 'dairyApp',
+            audience: 'dairyApp-users'
+        }, (err, token) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(token);
+        });
+    });
 }
 
-jwt.verifyToken = (token) => {
+exports.verifyToken = (token) => {
     try {
-        return jwt.verify(token, secret, { algorithms: ['RS256'] });
+        return jwt.verify(token, secret);
     } catch (error) {
         return null;
     }

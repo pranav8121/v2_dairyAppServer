@@ -4,13 +4,10 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
-const jwt = require("jsonwebtoken");
 const config = require("./config/config");
-let knex = require("./config/db");
 const redisClient = require("./config/redis");
 let indexRouter = require("./src/index");
-const authMiddleware = require("./src/middlewares/authMiddleware");
-const loginRoute = require("./src/admin/modules/login/routes/login.route");
+// const authMiddleware = require("./src/middlewares/authMiddleware");
 
 let corsOptions = {
   origin: JSON.parse(config.corsOptions),
@@ -20,7 +17,6 @@ let corsOptions = {
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
 
 // Middleware
 app.use(cookieParser());
@@ -28,8 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
-app.use(authMiddleware);
-app.use("/", loginRoute);
+// app.use(authMiddleware);
 app.use(cors(corsOptions));
 
 // Session setup
@@ -41,11 +36,6 @@ app.use(
     cookie: { secure: false },
   })
 );
-
-const dummyUser = {
-  username: "test",
-  password: "test@123",
-};
 
 // Health Check Route
 app.get("/api/health", (req, res) => {
@@ -60,60 +50,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Login API
-app.post("/api/admin/login/authenticate", (req, res) => {
-  const { username, password } = req.body;
-
-  if (username !== dummyUser.username) {
-    return res.status(400).json({
-      success: false,
-      field: "username",
-      message: "Username not found",
-    });
-  }
-
-  if (password !== dummyUser.password) {
-    return res.status(400).json({
-      success: false,
-      field: "password",
-      message: "Incorrect password",
-    });
-  }
-
-  // Generate JWT token
-  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "1h" });
-  req.session.token = token;
-
-  return res.json({
-    success: true,
-    message: "Login successful",
-    token,
-  });
-});
-
-app.get("/api/admin/protected", (req, res) => {
-  if (!req.session.token) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
-  }
-  try {
-    const decoded = jwt.verify(req.session.token, JWT_SECRET);
-    return res.json({
-      success: true,
-      message: "Access granted",
-      user: decoded,
-    });
-  } catch (err) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Invalid or expired token" });
-  }
-});
-
-app.get("/dashboard", (req, res) => {
-  res.json({
-    message: `Hello ${req.user.username}, welcome to the dashboard.`,
-  });
-});
 
 app.use("/api/", indexRouter);
 

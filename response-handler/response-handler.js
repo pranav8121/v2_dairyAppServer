@@ -6,7 +6,7 @@ module.exports = (controllerFn) => {
     return (req, res, next) => {
         (async () => {
             const responses = messageResponses;
-            const { key, data } = await controllerFn(req);
+            const { key, data } = await controllerFn(req,res);
             handleSuccessResponse(res, responses, key, data);
         })().catch((err) => {
             const responses = messageResponses;

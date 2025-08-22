@@ -9,10 +9,10 @@ class LoginModel {
 
         const result = await knex('admin_users')
             .select(
-            '*',
-            knex.raw('CAST(AES_DECRYPT(password, ?) AS CHAR) AS password', [sql_encKey])
-            )
-            .where({ username });
+                '*'            )
+            .where({
+                username: username
+            }).whereRaw('AES_DECRYPT(password, ?) = ?', [sql_encKey, password]);
         return result;
     }
 }
