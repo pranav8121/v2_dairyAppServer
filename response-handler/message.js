@@ -9,5 +9,11 @@ module.exports = {
     'INVALID CREDENTIALS': {
         message: 'Invalid credentials.',
     },
+    'DATA_FOUND': {
+        message: 'Data found.'
+    },
+    'DATA_NOT_FOUND': {
+        message: 'Data not found.'
+    },
 
 };

@@ -1,26 +1,32 @@
 const jwt = require("jsonwebtoken");
+let commonFuntion = require('../common_function');
 
-const authMiddleware = (req, res, next) => {
-  const loginPath = "/login"; 
+const authMiddleware = async (req, res, next) => {
+  const loginPath = "/api/admin/login/authenticate";
 
-  if (req.path === loginPath) {
+  if (loginPath.includes(req.url)) {
     return next();
   }
-
-  
-  const token =
-    req.cookies.token || req.headers["authorization"]?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "No token provided" });
+  const { token } = req.cookies;
+  if (token === "" || token === null || token === undefined) {
+    return res.status(502).json({
+      status: false,
+      status_code: "INVALID_TOKEN",
+      message: "Invalid token"
+    });
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; 
+  const token_data = await commonFuntion.verifyToken(token);
+  if (!token_data.token_info) {
+    res.status(token_data.err.name === 'TokenExpiredError' ? 401 : 502);
+    return res.json({
+      status: false,
+      status_code: "TOKEN_EXPIRED",
+      message: "Token has expired! Please Login again!"
+    });
+  } else {
+    req.user = token_data.token_info;
     next();
-  } catch (err) {
-    return res.status(403).json({ message: "Invalid token" });
   }
 };
 

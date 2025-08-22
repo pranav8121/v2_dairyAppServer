@@ -1,7 +1,7 @@
 'use strict';
 let router = require('express').Router();
-let loginService = new (require("../service/login.service"))();
+let memberService = new (require("../service/member.service"))();
 const responseHandler= require('../../../../../response-handler/response-handler');
 
-router.post('/authenticate', responseHandler(loginService.authenticate));
+router.get('/get_all_member', responseHandler(memberService.getAllMembers));
 module.exports = router;
