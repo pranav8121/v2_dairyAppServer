@@ -7,7 +7,7 @@ class MemberModel {
     async getAllMembers(data) {
         let { id } = data;
         const result = await knex('dairy_member')
-            .select('*')
+            .select('id', 'mr_name', 'en_name', 'dairy_id', 'type', 'phone')
             .where({ mst_id: id });
         return result;
     }
